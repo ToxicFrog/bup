@@ -55,7 +55,7 @@ def create_older_random_saves(n, start_utc, end_utc):
 # computation method is different here, in part so that the test can
 # provide a more effective cross-check.
 
-period_kinds = ['all', 'dailies', 'monthlies', 'yearlies']
+period_kinds = ['all', 'dailies', 'weeklies', 'monthlies', 'yearlies']
 period_scale = {'s': 1,
                 'min': 60,
                 'h': 60 * 60,
@@ -82,6 +82,11 @@ def expected_retentions(utcs, utc_start, spec):
                in groupby(matches, lambda x: localtime(x).tm_yday)]
     utcs = list(dropwhile(lambda x: x >= period_start['dailies'], utcs))
 
+    matches = takewhile(lambda x: x >= period_start['weeklies'], utcs)
+    weeklies = [max(week_utcs) for week, week_utcs
+                in groupby(matches, lambda x: int(strftime('%W', localtime(x))))]
+    utcs = list(dropwhile(lambda x: x >= period_start['weeklies'], utcs))
+
     matches = takewhile(lambda x: x >= period_start['monthlies'], utcs)
     monthlies = [max(month_utcs) for month, month_utcs
                  in groupby(matches, lambda x: localtime(x).tm_mon)]
@@ -91,7 +96,7 @@ def expected_retentions(utcs, utc_start, spec):
     yearlies = [max(year_utcs) for year, year_utcs
                 in groupby(matches, lambda x: localtime(x).tm_year)]
 
-    return chain(all, dailies, monthlies, yearlies)
+    return chain(all, dailies, weeklies, monthlies, yearlies)
 
 def period_spec(start_utc, end_utc):
     global period_kinds, period_scale, period_scale_kinds
